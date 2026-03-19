@@ -221,7 +221,7 @@ ApplyFilter(*) {
         gLV.Opt("+Redraw")
     }
 
-    gStatus.Text := "Ukryte łącznie: " gAllWindows.Length " | Na liście: " shown
+    gStatus.Text := "Hidden total: " gAllWindows.Length " | On the list: " shown
 }
 
 ShowSelected(*) {
