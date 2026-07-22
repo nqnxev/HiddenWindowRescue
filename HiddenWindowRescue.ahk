@@ -8,6 +8,9 @@ global gEdFilter := 0
 global gChkAppsOnly := 0
 global gChkAuto := 0
 global gEdInterval := 0
+global gBtnRefresh := 0
+global gBtnShowSel := 0
+global gBtnShowAll := 0
 
 global gAllWindows := []
 global gRowToHwnd := Map()
@@ -18,18 +21,19 @@ ScanAndRefresh()
 
 BuildGui() {
     global gGui, gLV, gStatus, gEdFilter, gChkAppsOnly, gChkAuto, gEdInterval
+    global gBtnRefresh, gBtnShowSel, gBtnShowAll
 
-    gGui := Gui(, "Hidden Window Rescue")
+    gGui := Gui("+Resize", "Whim Hidden Window Rescue+")
     gGui.SetFont("s9", "Segoe UI")
 
-    gGui.Add("Text", "xm ym+4", "Filter:")
+    gGui.Add("Text", "xm ym+4", "Filtr:")
     gEdFilter := gGui.Add("Edit", "x+6 yp-2 w280")
 
-    gChkAppsOnly := gGui.Add("CheckBox", "x+12 yp+2 Checked", "Only real windows")
-    gChkAuto := gGui.Add("CheckBox", "x+18 yp", "Auto-refresh")
-    gGui.Add("Text", "x+10 yp+3", "every")
+    gChkAppsOnly := gGui.Add("CheckBox", "x+12 yp+2 Checked", "Tylko prawdziwe okna aplikacji")
+    gChkAuto := gGui.Add("CheckBox", "x+18 yp", "Auto-odświeżanie")
+    gGui.Add("Text", "x+10 yp+3", "co")
     gEdInterval := gGui.Add("Edit", "x+4 yp-3 w40 Number Limit4", "3")
-    gGui.Add("Text", "x+4 yp+3", "seconds")
+    gGui.Add("Text", "x+4 yp+3", "s")
 
     gLV := gGui.Add("ListView", "xm y+10 w1180 r22 Grid", ["HWND", "Title", "Process", "Class", "PID", "Flags"])
     gLV.ModifyCol(1, 150)
@@ -39,9 +43,9 @@ BuildGui() {
     gLV.ModifyCol(5, 80)
     gLV.ModifyCol(6, 180)
 
-    btnRefresh := gGui.Add("Button", "xm y+10 w120 Default", "Scan")
-    btnShowSel := gGui.Add("Button", "x+10 w180", "Show selected")
-    btnShowAll := gGui.Add("Button", "x+10 w220", "Show selected from the list")
+    gBtnRefresh := gGui.Add("Button", "xm y+10 w120 Default", "Skanuj")
+    gBtnShowSel := gGui.Add("Button", "x+10 w180", "Pokaż zaznaczone")
+    gBtnShowAll := gGui.Add("Button", "x+10 w220", "Pokaż wszystkie z listy")
 
     gStatus := gGui.Add("Text", "xm y+10 w1180", "")
 
@@ -50,18 +54,50 @@ BuildGui() {
     gChkAuto.OnEvent("Click", OnAutoRefreshToggle)
     gEdInterval.OnEvent("Change", OnIntervalChanged)
 
-    btnRefresh.OnEvent("Click", ScanAndRefresh)
-    btnShowSel.OnEvent("Click", ShowSelected)
-    btnShowAll.OnEvent("Click", ShowAllListed)
+    gBtnRefresh.OnEvent("Click", ScanAndRefresh)
+    gBtnShowSel.OnEvent("Click", ShowSelected)
+    gBtnShowAll.OnEvent("Click", ShowAllListed)
     gLV.OnEvent("DoubleClick", ShowDoubleClicked)
 
     gGui.OnEvent("Close", GuiClose)
+    gGui.OnEvent("Size", GuiSize)
     gGui.Show()
 }
 
 GuiClose(*) {
     SetTimer(AutoRefreshTick, 0)
     ExitApp()
+}
+
+GuiSize(guiObj, minMax, width, height) {
+    global gLV, gStatus, gBtnRefresh, gBtnShowSel, gBtnShowAll
+
+    ; Nie zmieniaj układu podczas minimalizacji.
+    if (minMax = -1)
+        return
+
+    margin := 10
+    buttonH := 28
+    statusH := 20
+    gap := 10
+
+    statusY := height - margin - statusH
+    buttonY := statusY - gap - buttonH
+
+    ; ListView rozciąga się razem z oknem.
+    listY := 65
+    listH := buttonY - gap - listY
+
+    if (listH < 50)
+        listH := 50
+
+    gLV.Move(,, width - 2 * margin, listH)
+
+    gBtnRefresh.Move(margin, buttonY)
+    gBtnShowSel.Move(margin + 130, buttonY)
+    gBtnShowAll.Move(margin + 320, buttonY)
+
+    gStatus.Move(margin, statusY, width - 2 * margin, statusH)
 }
 
 OnFilterChanged(*) {
@@ -221,7 +257,7 @@ ApplyFilter(*) {
         gLV.Opt("+Redraw")
     }
 
-    gStatus.Text := "Hidden total: " gAllWindows.Length " | On the list: " shown
+    gStatus.Text := "Ukryte łącznie: " gAllWindows.Length " | Na liście: " shown
 }
 
 ShowSelected(*) {
