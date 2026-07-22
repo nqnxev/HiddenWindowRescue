@@ -16,26 +16,82 @@ global gAllWindows := []
 global gRowToHwnd := Map()
 global gScanBusy := false
 
+global gLblFilter := 0
+global gLblCo := 0
+global gLblS := 0
+global gBtnLang := 0
+
+global gLang := "pl"
+global TR := Map(
+    "pl", Map(
+        "title", "Whim Hidden Window Rescue+",
+        "filter", "Filtr:",
+        "appsOnly", "Tylko prawdziwe okna aplikacji",
+        "auto", "Auto-odświeżanie",
+        "co", "co",
+        "s", "s",
+        "colHwnd", "HWND",
+        "colTitle", "Tytuł",
+        "colProcess", "Proces",
+        "colClass", "Klasa",
+        "colPid", "PID",
+        "colFlags", "Flagi",
+        "btnRefresh", "Skanuj",
+        "btnShowSel", "Pokaż zaznaczone",
+        "btnShowAll", "Pokaż wszystkie z listy",
+        "btnLang", "EN",
+        "statusFormat", "Ukryte łącznie: {1} | Na liście: {2}",
+        "dash", "—"
+    ),
+    "en", Map(
+        "title", "Whim Hidden Window Rescue+",
+        "filter", "Filter:",
+        "appsOnly", "Real application windows only",
+        "auto", "Auto-refresh",
+        "co", "every",
+        "s", "s",
+        "colHwnd", "HWND",
+        "colTitle", "Title",
+        "colProcess", "Process",
+        "colClass", "Class",
+        "colPid", "PID",
+        "colFlags", "Flags",
+        "btnRefresh", "Scan",
+        "btnShowSel", "Show selected",
+        "btnShowAll", "Show all listed",
+        "btnLang", "PL",
+        "statusFormat", "Hidden total: {1} | Listed: {2}",
+        "dash", "—"
+    )
+)
+
+T(key) {
+    global gLang, TR
+    return TR[gLang][key]
+}
+
 BuildGui()
 ScanAndRefresh()
 
 BuildGui() {
     global gGui, gLV, gStatus, gEdFilter, gChkAppsOnly, gChkAuto, gEdInterval
     global gBtnRefresh, gBtnShowSel, gBtnShowAll
+    global gLblFilter, gLblCo, gLblS, gBtnLang
 
-    gGui := Gui("+Resize", "Whim Hidden Window Rescue+")
+    gGui := Gui("+Resize", T("title"))
     gGui.SetFont("s9", "Segoe UI")
 
-    gGui.Add("Text", "xm ym+4", "Filtr:")
+    gLblFilter := gGui.Add("Text", "xm ym+4", T("filter"))
     gEdFilter := gGui.Add("Edit", "x+6 yp-2 w280")
 
-    gChkAppsOnly := gGui.Add("CheckBox", "x+12 yp+2 Checked", "Tylko prawdziwe okna aplikacji")
-    gChkAuto := gGui.Add("CheckBox", "x+18 yp", "Auto-odświeżanie")
-    gGui.Add("Text", "x+10 yp+3", "co")
+    gChkAppsOnly := gGui.Add("CheckBox", "x+12 yp+2 Checked", T("appsOnly"))
+    gChkAuto := gGui.Add("CheckBox", "x+18 yp", T("auto"))
+    gLblCo := gGui.Add("Text", "x+10 yp+3", T("co"))
     gEdInterval := gGui.Add("Edit", "x+4 yp-3 w40 Number Limit4", "3")
-    gGui.Add("Text", "x+4 yp+3", "s")
+    gLblS := gGui.Add("Text", "x+4 yp+3", T("s"))
+    gBtnLang := gGui.Add("Button", "x+14 yp-3 w40", T("btnLang"))
 
-    gLV := gGui.Add("ListView", "xm y+10 w1180 r22 Grid", ["HWND", "Title", "Process", "Class", "PID", "Flags"])
+    gLV := gGui.Add("ListView", "xm y+10 w1180 r22 Grid", [T("colHwnd"), T("colTitle"), T("colProcess"), T("colClass"), T("colPid"), T("colFlags")])
     gLV.ModifyCol(1, 150)
     gLV.ModifyCol(2, 360)
     gLV.ModifyCol(3, 180)
@@ -43,9 +99,9 @@ BuildGui() {
     gLV.ModifyCol(5, 80)
     gLV.ModifyCol(6, 180)
 
-    gBtnRefresh := gGui.Add("Button", "xm y+10 w120 Default", "Skanuj")
-    gBtnShowSel := gGui.Add("Button", "x+10 w180", "Pokaż zaznaczone")
-    gBtnShowAll := gGui.Add("Button", "x+10 w220", "Pokaż wszystkie z listy")
+    gBtnRefresh := gGui.Add("Button", "xm y+10 w120 Default", T("btnRefresh"))
+    gBtnShowSel := gGui.Add("Button", "x+10 w180", T("btnShowSel"))
+    gBtnShowAll := gGui.Add("Button", "x+10 w220", T("btnShowAll"))
 
     gStatus := gGui.Add("Text", "xm y+10 w1180", "")
 
@@ -57,11 +113,43 @@ BuildGui() {
     gBtnRefresh.OnEvent("Click", ScanAndRefresh)
     gBtnShowSel.OnEvent("Click", ShowSelected)
     gBtnShowAll.OnEvent("Click", ShowAllListed)
+    gBtnLang.OnEvent("Click", ToggleLanguage)
     gLV.OnEvent("DoubleClick", ShowDoubleClicked)
 
     gGui.OnEvent("Close", GuiClose)
     gGui.OnEvent("Size", GuiSize)
     gGui.Show()
+}
+
+ToggleLanguage(*) {
+    global gLang
+    gLang := (gLang = "pl") ? "en" : "pl"
+    ApplyLanguage()
+}
+
+ApplyLanguage() {
+    global gGui, gLblFilter, gChkAppsOnly, gChkAuto, gLblCo, gLblS
+    global gBtnRefresh, gBtnShowSel, gBtnShowAll, gBtnLang, gLV
+
+    gGui.Title := T("title")
+    gLblFilter.Text := T("filter")
+    gChkAppsOnly.Text := T("appsOnly")
+    gChkAuto.Text := T("auto")
+    gLblCo.Text := T("co")
+    gLblS.Text := T("s")
+    gBtnRefresh.Text := T("btnRefresh")
+    gBtnShowSel.Text := T("btnShowSel")
+    gBtnShowAll.Text := T("btnShowAll")
+    gBtnLang.Text := T("btnLang")
+
+    gLV.ModifyCol(1,, T("colHwnd"))
+    gLV.ModifyCol(2,, T("colTitle"))
+    gLV.ModifyCol(3,, T("colProcess"))
+    gLV.ModifyCol(4,, T("colClass"))
+    gLV.ModifyCol(5,, T("colPid"))
+    gLV.ModifyCol(6,, T("colFlags"))
+
+    ApplyFilter()
 }
 
 GuiClose(*) {
@@ -244,10 +332,10 @@ ApplyFilter(*) {
 
             row := gLV.Add(""
                 , FormatHwnd(item.hwnd)
-                , item.title != "" ? item.title : "—"
-                , item.proc != "" ? item.proc : "—"
-                , item.cls != "" ? item.cls : "—"
-                , item.pid != "" ? item.pid : "—"
+                , item.title != "" ? item.title : T("dash")
+                , item.proc != "" ? item.proc : T("dash")
+                , item.cls != "" ? item.cls : T("dash")
+                , item.pid != "" ? item.pid : T("dash")
                 , item.flags)
 
             gRowToHwnd[row] := item.hwnd
@@ -257,7 +345,7 @@ ApplyFilter(*) {
         gLV.Opt("+Redraw")
     }
 
-    gStatus.Text := "Ukryte łącznie: " gAllWindows.Length " | Na liście: " shown
+    gStatus.Text := Format(T("statusFormat"), gAllWindows.Length, shown)
 }
 
 ShowSelected(*) {
